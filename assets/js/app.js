@@ -25,7 +25,7 @@ let DB=null;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(DB))}catch(e){toast('Gagal menyimpan data','err')}}
 function loadDB(){try{const r=JSON.parse(localStorage.getItem(KEY));if(r&&Array.isArray(r.tasks)&&Array.isArray(r.projects))return r}catch(e){}return null}
 function logAct(text){DB.activity.unshift({ts:Date.now(),text});DB.activity=DB.activity.slice(0,60);save()}
-function mkTask(o){return Object.assign({id:uid(),title:'',notes:'',project:'',priority:'med',status:'todo',due:'',createdAt:Date.now(),doneAt:null,subtasks:[]},o)}
+function mkTask(o){return Object.assign({id:uid(),title:'',notes:'',project:'',priority:'med',status:'todo',due:'',repeat:'',createdAt:Date.now(),doneAt:null,subtasks:[]},o)}
 function seed(){
   const mk=(title,project,priority,status,due,notes,subs)=>mkTask({title,project,priority,status,due:due==null?'':dOff(due),notes:notes||'',createdAt:Date.now()-Math.floor(Math.random()*8*864e5),doneAt:status==='done'?Date.now()-Math.floor(Math.random()*6*864e5):null,subtasks:subs||[]});
   return {
@@ -109,11 +109,33 @@ let currentRender=null;
 function refresh(){if(currentRender)currentRender()}
 
 /* ---------- Task mutations ---------- */
-function toggleDone(id){
+function toggleDone(id,origin){
   const t=getTask(id);if(!t)return;
   if(t.status==='done'){t.status='todo';t.doneAt=null;logAct('Dibuka kembali: "'+t.title+'"')}
-  else{t.status='done';t.doneAt=Date.now();logAct('Selesai: "'+t.title+'"')}
+  else{
+    t.status='done';t.doneAt=Date.now();logAct('Selesai: "'+t.title+'"');
+    if(origin)confettiAt(origin);
+    if(t.repeat==='daily'||t.repeat==='weekly'){
+      const next=mkTask({title:t.title,notes:t.notes,project:t.project,priority:t.priority,status:'todo',repeat:t.repeat,subtasks:(t.subtasks||[]).map(x=>({text:x.text,done:false}))});
+      if(t.due){const d=new Date(t.due+'T00:00:00');d.setDate(d.getDate()+(t.repeat==='weekly'?7:1));next.due=iso(d)}
+      DB.tasks.push(next);
+      logAct('Berulang: "'+t.title+'" dijadwalkan '+fmtDate(next.due));
+    }
+  }
   save();refresh();toast('Tugas diperbarui');
+}
+function confettiAt(el){
+  if(reduced)return;
+  const r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+  const cols=['#059669','#10B981','#FCD34D','#34D399','#F59E0B'];
+  for(let i=0;i<16;i++){
+    const p=document.createElement('i');p.className='confetti';
+    p.style.left=cx+'px';p.style.top=cy+'px';p.style.background=cols[i%cols.length];
+    const a=Math.random()*Math.PI*2,v=50+Math.random()*90;
+    p.style.setProperty('--dx',Math.cos(a)*v+'px');
+    p.style.setProperty('--dy',(Math.sin(a)*v-70)+'px');
+    document.body.appendChild(p);setTimeout(()=>p.remove(),850);
+  }
 }
 function setStatus(id,st){
   const t=getTask(id);if(!t||t.status===st)return;
@@ -134,6 +156,7 @@ function openTaskModal(task,presetStatus,presetDue){
   $('#tPrio').value=task?task.priority:'med';
   $('#tStatus').value=task?task.status:(presetStatus||'todo');
   $('#tDue').value=task?task.due:'';
+  $('#tRepeat').value=task?(task.repeat||''):'';
   tempSubs=task?task.subtasks.map(s=>({text:s.text,done:s.done})):[];
   renderSubs();
   $('#mTaskTitle').textContent=task?'Edit Tugas':'Tugas Baru';
@@ -157,7 +180,7 @@ function renderSubs(){
 function saveTask(){
   const title=$('#tTitle').value.trim();
   if(!title){toast('Judul tugas wajib diisi','err');$('#tTitle').focus();return}
-  const data={title,notes:$('#tNotes').value.trim(),project:$('#tProject').value,priority:$('#tPrio').value,status:$('#tStatus').value,due:$('#tDue').value,subtasks:tempSubs.filter(s=>s.text.trim())};
+  const data={title,notes:$('#tNotes').value.trim(),project:$('#tProject').value,priority:$('#tPrio').value,status:$('#tStatus').value,due:$('#tDue').value,repeat:$('#tRepeat').value,subtasks:tempSubs.filter(s=>s.text.trim())};
   if(editingId){
     const t=getTask(editingId);Object.assign(t,data);
     if(t.status==='done'&&!t.doneAt)t.doneAt=Date.now();
@@ -193,13 +216,13 @@ function taskRow(t,opts){
   row.dataset.id=t.id;
   row.innerHTML=
     '<input type="checkbox" class="chk" aria-label="Tandai selesai" '+(t.status==='done'?'checked':'')+'>'+
-    '<span class="r-main"><span class="r-title">'+esc(t.title)+'</span><span class="r-meta">'+esc(projName(t.project))+' · '+STATUS[t.status]+subCount(t)+'</span></span>'+
+    '<span class="r-main"><span class="r-title">'+esc(t.title)+'</span><span class="r-meta">'+esc(projName(t.project))+' · '+STATUS[t.status]+subCount(t)+(t.repeat==='daily'?' · berulang harian':t.repeat==='weekly'?' · berulang mingguan':'')+'</span></span>'+
     '<span class="r-due '+d.cls+'">'+d.label+'</span>'+
     '<span class="prio"><i class="dot '+t.priority+'"></i>'+PRIO[t.priority]+'</span>'+
     '<select class="st-sel v-'+t.status+'" aria-label="Status">'+
       Object.keys(STATUS).map(k=>'<option value="'+k+'" '+(k===t.status?'selected':'')+'>'+STATUS[k]+'</option>').join('')+
     '</select>';
-  row.querySelector('.chk').addEventListener('change',()=>toggleDone(t.id));
+  row.querySelector('.chk').addEventListener('change',e=>toggleDone(t.id,e.target));
   const sel=row.querySelector('.st-sel');
   sel.addEventListener('change',()=>setStatus(t.id,sel.value));
   sel.addEventListener('click',e=>e.stopPropagation());
@@ -281,6 +304,7 @@ function initTasks(){
   function render(){
     let list=DB.tasks.filter(t=>{
       if(st==='over'){if(!isOverdue(t))return false}
+      else if(st==='today'){if(t.due!==todayISO())return false}
       else if(st!=='all'&&t.status!==st)return false;
       if(pr!=='all'&&t.priority!==pr)return false;
       if(pj!=='all'&&t.project!==pj)return false;
@@ -474,6 +498,7 @@ function initReports(){
     /* log */
     $('#rAct').innerHTML=DB.activity.slice(0,20).map(a=>'<div class="act"><span>'+esc(a.text)+'</span><time>'+new Date(a.ts).toLocaleDateString('id-ID',{day:'numeric',month:'short'})+' · '+fmtTime(a.ts)+'</time></div>').join('');
   }
+  const pb=$('#printBtn');if(pb)pb.addEventListener('click',()=>window.print());
   function calcStreak(){
     let s=0;for(let i=0;i<30;i++){const d=dOff(-i);const has=DB.tasks.some(t=>t.doneAt&&iso(new Date(t.doneAt))===d);if(has)s++;else if(i>0)break}
     return s;
@@ -544,6 +569,22 @@ document.addEventListener('keydown',e=>{
   if(e.key==='/'&&!typing){const s=$('#taskSearch');if(s){e.preventDefault();s.focus()}}
   if((e.key==='n'||e.key==='N')&&!typing&&$('#mTask')){e.preventDefault();openTaskModal(null)}
 });
+
+/* 3D tilt (perangkat dengan pointer halus saja) */
+if(matchMedia('(hover:hover) and (pointer:fine)').matches&&!reduced){
+  const initTilt=el=>{
+    el.addEventListener('mousemove',e=>{
+      const r=el.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+      el.style.transform='perspective(700px) rotateX('+(-y*6).toFixed(2)+'deg) rotateY('+(x*6).toFixed(2)+'deg)';
+    });
+    el.addEventListener('mouseleave',()=>{el.style.transform=''});
+  };
+  $$('.stat').forEach(initTilt);
+  document.addEventListener('mouseover',e=>{const k=e.target.closest('.kcard');if(k&&!k.dataset.tilt){k.dataset.tilt='1';initTilt(k)}});
+}
+/* scroll progress bar */
+const sprog=document.createElement('div');sprog.className='sprog';document.body.appendChild(sprog);
+addEventListener('scroll',()=>{const h=document.documentElement;const m=h.scrollHeight-h.clientHeight;sprog.style.width=(m>0?h.scrollTop/m*100:0)+'%'},{passive:true});
 
 /* page init */
 const INIT={dashboard:initDashboard,tasks:initTasks,board:initBoard,calendar:initCalendar,projects:initProjects,reports:initReports,settings:initSettings};

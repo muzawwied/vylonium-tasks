@@ -25,7 +25,7 @@ input,select,textarea{font:inherit;color:inherit}
 .pre{position:fixed;inset:0;z-index:200;background:var(--bg);display:grid;place-items:center;transition:opacity .5s var(--ease),visibility .5s}
 .pre.done{opacity:0;visibility:hidden}
 .pre-in{display:grid;justify-items:center;gap:18px}
-.pre-in svg{width:52px;height:39px;animation:preFloat 2.2s ease-in-out infinite}
+.pre-in svg{width:46px;height:46px;animation:preFloat 2.2s ease-in-out infinite}
 .pre-bar{width:120px;height:3px;border-radius:99px;background:var(--line);overflow:hidden}
 .pre-bar i{display:block;height:100%;width:40%;border-radius:99px;background:var(--grad);animation:preLoad 1.1s var(--ease) infinite}
 @keyframes preLoad{0%{transform:translateX(-110%)}100%{transform:translateX(330%)}}
@@ -35,7 +35,7 @@ input,select,textarea{font:inherit;color:inherit}
 .app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100svh}
 .side{border-right:1px solid var(--line);background:var(--surface);position:sticky;top:0;height:100svh;display:flex;flex-direction:column;padding:26px 18px;z-index:40}
 .brand{display:inline-flex;align-items:center;gap:10px;font-weight:800;font-size:1.18rem;letter-spacing:-.03em;padding:0 10px;margin-bottom:34px}
-.brand svg{width:36px;height:27px;flex-shrink:0}
+.brand svg{width:30px;height:30px;flex-shrink:0;animation:floaty 4s ease-in-out infinite}
 .brand em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
 .nav{display:flex;flex-direction:column;gap:2px}
 .n-link{padding:11px 12px;border-radius:10px;font-weight:600;font-size:.95rem;color:var(--muted);transition:color .2s,background .2s;position:relative}
@@ -267,7 +267,7 @@ textarea.input{resize:vertical;min-height:84px}
   .side-veil.show{opacity:1;visibility:visible}
   .topbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--line);padding:14px clamp(16px,4vw,24px)}
   .topbar .t-brand{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:-.03em;margin-right:auto}
-  .topbar .t-brand svg{width:28px;height:21px}
+  .topbar .t-brand svg{width:26px;height:26px}
   .topbar .t-date{font-size:.76rem;color:var(--soft);font-weight:600}
   .burger{display:grid}
   .board{grid-template-columns:1fr}
@@ -303,3 +303,18 @@ textarea.input{resize:vertical;min-height:84px}
   .app{grid-template-columns:1fr}
   body{background:#fff}
 }
+
+/* ================= Tambahan: 3D, animasi, polish ================= */
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-2.5px)}}
+body{animation:pageIn .45s var(--ease)}
+@keyframes pageIn{from{opacity:0}to{opacity:1}}
+.sprog{position:fixed;top:0;left:0;height:3px;width:0;background:var(--grad);z-index:90;transition:width .08s linear;border-radius:0 3px 3px 0}
+.stat{transition:transform .3s var(--ease),background .3s}
+.stat:hover{background:#ECFDF5}
+.empty{border:1.5px dashed var(--line-2);border-radius:12px;margin-top:14px}
+.kcard{will-change:transform}
+.confetti{position:fixed;width:7px;height:7px;border-radius:2px;pointer-events:none;z-index:180;animation:conf .8s ease-out forwards}
+@keyframes conf{to{transform:translate(var(--dx),var(--dy)) rotate(240deg) scale(.3);opacity:0}}
+.rep-tag{font-size:.68rem;font-weight:800;color:#B45309;background:#FFFBEB;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.panel{transition:box-shadow .3s var(--ease)}
+.panel:hover{box-shadow:0 4px 18px rgba(15,23,42,.06)}
