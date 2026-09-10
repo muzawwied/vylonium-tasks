@@ -114,8 +114,8 @@ textarea.input{resize:vertical;min-height:84px}
 .chk:checked{background:var(--grad);border-color:transparent}
 .chk:checked::after{content:"";position:absolute;left:5px;top:1.5px;width:5px;height:9px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
 .r-main{min-width:0}
-.r-title{font-weight:700;font-size:.96rem;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.r-meta{font-size:.76rem;color:var(--soft);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-title{display:block;font-weight:700;font-size:.96rem;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-meta{display:block;font-size:.76rem;color:var(--soft);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .r-due{font-size:.78rem;font-weight:700;color:var(--muted);white-space:nowrap}
 .r-due.over{color:var(--high)}
 .r-due.today{color:var(--acc)}
